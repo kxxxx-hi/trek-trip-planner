@@ -2,8 +2,6 @@ import React, { useEffect, ReactNode } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useSettingsStore } from './store/settingsStore'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import TripPlannerPage from './pages/TripPlannerPage'
 import FilesPage from './pages/FilesPage'
@@ -37,7 +35,7 @@ function ProtectedRoute({ children, adminRequired = false }: ProtectedRouteProps
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   if (adminRequired && user && user.role !== 'admin') {
@@ -48,7 +46,7 @@ function ProtectedRoute({ children, adminRequired = false }: ProtectedRouteProps
 }
 
 function RootRedirect() {
-  const { isAuthenticated, isLoading } = useAuthStore()
+  const { isLoading } = useAuthStore()
 
   if (isLoading) {
     return (
@@ -58,17 +56,17 @@ function RootRedirect() {
     )
   }
 
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
-  const { loadUser, token, isAuthenticated, demoMode, setDemoMode, setHasMapsKey } = useAuthStore()
+  const { loadUser, token, isAuthenticated, demoMode, setDemoMode, setHasMapsKey, initializeGuest } = useAuthStore()
   const { loadSettings } = useSettingsStore()
 
   useEffect(() => {
-    if (token) {
-      loadUser()
-    }
+    // Initialize as guest user (no login required)
+    initializeGuest()
+    
     authApi.getAppConfig().then((config: { demo_mode?: boolean; has_maps_key?: boolean }) => {
       if (config?.demo_mode) setDemoMode(true)
       if (config?.has_maps_key !== undefined) setHasMapsKey(config.has_maps_key)
@@ -106,8 +104,6 @@ export default function App() {
       <ToastContainer />
       <Routes>
         <Route path="/" element={<RootRedirect />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<LoginPage />} />
         <Route
           path="/dashboard"
           element={
